@@ -36,3 +36,61 @@ def name():
         return jsonify({"success": True, "name": name})
     else:
         return jsonify({"success": False})
+
+@app.route("/lastChannel", methods=["POST"])
+def lastChannel():
+    """Remember Last Channel visited in Session"""
+    channel = request.form.get("lastChannel")
+    session["lastChannel"] = channel
+    return '', 204
+
+@app.route("/channel", methods=["POST"])
+def channel():
+    channel = request.form.get('channel')
+    # If element already exist, NOT create another with the same name
+    for elem in channels:
+        if channel in elem.name:
+            return jsonify({"success": False})
+    # If no channel named the same, then create a new one
+    newChannel = Channel(channel)
+    channels.append(newChannel)
+    # Create a dictionary for every object so then can be tranformed easily into JSON objects
+    channelsFeed = []
+    for object in channels:
+        channelsFeed.append(object.__dict__)
+    return jsonify({"success": True, "channel": channel, "channels": channelsFeed})
+
+
+@socketio.on("sendMessage")
+def chat(data):
+    channel = data["channel"]
+    message = data["message"]
+    # Check all existing channels seeking for the same name
+    for checkChannel in channels:
+        # If exist then append the new message else emit a Not success message
+        if checkChannel.name == channel:
+            time = '{:%H:%M:%S}'.format(datetime.datetime.now())
+            sender = session["name"]
+            checkChannel.newMessage(message, sender, channel, time)
+
+            last_message = checkChannel.messages[-1]
+            emit("update", last_message, broadcast=True)
+            return
+    emit("update", 'Not success', broadcast=True)
+
+@socketio.on("update")
+def conect(data):
+    channel = data["channel"]
+    #Checking for an existing channel with that same name
+    for checkChannel in channels:
+        # If exist, charge all old messages stored there and emit
+        if checkChannel.name == channel:
+            oldMessages = checkChannel.messages
+            name = session["name"]
+            emit("updateChat", (oldMessages, name), broadcast=True)
+            return
+    # Else, emit a notFound message
+    emit("updateChat", 'notFound', broadcast=True)
+
+if __name__ == '__main__':
+    socketio.run(app)
