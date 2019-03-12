@@ -26,3 +26,13 @@ def index():
             return render_template("index.html", name=session["name"], channels=channels)
         except KeyError:
             return render_template("index.html", channels=channels)
+
+@app.route("/name", methods=["POST"])
+def name():
+    name = request.form.get("name")
+    """If Display Name not empty create and remember in session"""
+    if name is not '':
+        session["name"] = name
+        return jsonify({"success": True, "name": name})
+    else:
+        return jsonify({"success": False})

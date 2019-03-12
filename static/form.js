@@ -22,12 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.success){
           document.querySelector('#form').style.display = 'none';
           let h = document.createElement('h3');
-          h.innerHTML = 'Welcome ' + data.name + '!';
+          h.innerHTML = data.name + 'registered.';
           document.querySelector('#user-data').dataset.username = data.name;
           document.querySelector('#DisplayName').append(h);
           document.querySelector('#channelContainer').style.display = '';
         }else{
-          document.querySelector('#DisplayName').innerHTML = 'Humm!, Unfortunately there was an error.. Please try again';
+          document.querySelector('#DisplayName').innerHTML = 'Error.. Please try again';
         }
       }
       return false;
